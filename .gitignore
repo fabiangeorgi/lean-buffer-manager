@@ -1,0 +1,8 @@
+cmake-build-*/
+build/
+.idea/
+.vscode/
+.cache/
+*.swp
+*.o
+server_files.zip
