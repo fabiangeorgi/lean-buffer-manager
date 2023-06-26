@@ -10,54 +10,69 @@
 // this swip state. You can use the two least significant bits for indicating the states / pointer tagging.
 
 class Swip {
- public:
-  // Creates an unswizzled swip with an invalid page id. The swip indicates that the referenced page is not swizzled,
-  // not cooling, but evicted.
-  Swip();
+public:
+    // Creates an unswizzled swip with an invalid page id. The swip indicates that the referenced page is not swizzled,
+    // not cooling, but evicted.
+    Swip();
 
-  // Creates an unswizzled swip storing the given page id. The swip indicates that the referenced page is not swizzled,
-  // not cooling, but evicted.
-  Swip(PageID page_id);
+    // Creates an unswizzled swip storing the given page id. The swip indicates that the referenced page is not swizzled,
+    // not cooling, but evicted.
+    Swip(PageID page_id);
 
-  // Creates a swizzled swip storing the buffer_frame. The swip indicates that the referenced page is swizzled,
-  // not cooling, not evicted.
-  Swip(BufferFrame* buffer_frame);
+    // Creates a swizzled swip storing the buffer_frame. The swip indicates that the referenced page is swizzled,
+    // not cooling, not evicted.
+    Swip(BufferFrame *buffer_frame);
 
-  // Returns whether the swip is swizzled.
-  bool is_swizzled();
+    // Returns whether the swip is swizzled.
+    bool is_swizzled();
 
-  // Returns whether the swip is cooling.
-  bool is_cooling();
+    // Returns whether the swip is cooling.
+    bool is_cooling();
 
-  // Returns whether the swip is evicted.
-  bool is_evicted();
+    // Returns whether the swip is evicted.
+    bool is_evicted();
 
-  // Assumes that the frame pointer is still stored and valid but unswizzled/cooling. Thus, cooling bit(s) are set
-  // accordingly. Flips the cooling bit(s) so that the stored frame pointer address is correct (swip is swizzled).
-  void swizzle();
+    // Assumes that the frame pointer is still stored and valid but unswizzled/cooling. Thus, cooling bit(s) are set
+    // accordingly. Flips the cooling bit(s) so that the stored frame pointer address is correct (swip is swizzled).
+    void swizzle();
 
-  // Stores the given frame pointer address. Swip is swizzled afterwards.
-  void swizzle(BufferFrame* buffer_frame);
+    // Stores the given frame pointer address. Swip is swizzled afterwards.
+    void swizzle(BufferFrame *buffer_frame);
 
-  // Flips the cooling bit(s) to indicate that the swip is in cooling state. Assumes that the swip is swizzled.
-  void unswizzle();
+    // Flips the cooling bit(s) to indicate that the swip is in cooling state. Assumes that the swip is swizzled.
+    void unswizzle();
 
-  // Sets the page ID and one or more bits indicating that this swip is unswizzled/evicted.
-  void evict(PageID page_id);
+    // Sets the page ID and one or more bits indicating that this swip is unswizzled/evicted.
+    void evict(PageID page_id);
 
-  // Returns the stored page id. Note that the two least significant bits are used for pointer tagging.
-  PageID page_id();
+    // Returns the stored page id. Note that the two least significant bits are used for pointer tagging.
+    PageID page_id();
 
-  // Returns the stored buffer frame. This expects that the frame is stored in the swip, i.e., the swip is swizzled and
-  // it is not in cooling state.
-  BufferFrame* buffer_frame();
+    // Returns the stored buffer frame. This expects that the frame is stored in the swip, i.e., the swip is swizzled and
+    // it is not in cooling state.
+    BufferFrame *buffer_frame();
 
-  // Returns the stored buffer frame. This expects the swip to be (1) swizzled or (2) cooling. To get a valid pointer
-  // address, the bit(s) used for the cooling state have to be ignored. The state of the swip does not change.
-  BufferFrame* buffer_frame_ignore_tags();
+    // Returns the stored buffer frame. This expects the swip to be (1) swizzled or (2) cooling. To get a valid pointer
+    // address, the bit(s) used for the cooling state have to be ignored. The state of the swip does not change.
+    BufferFrame *buffer_frame_ignore_tags();
 
- private:
-  // Note, that a swip stores either a buffer frame pointer or a page id. The size of a swip thus should be 8 Byte.
-  // You might want do define constants here for bit modifications and comparisons.
-  // -- TODO(student)
+private:
+    // Note, that a swip stores either a buffer frame pointer or a page id. The size of a swip thus should be 8 Byte.
+    // You might want do define constants here for bit modifications and comparisons.
+    union {
+        uint64_t pageId;
+        BufferFrame *pBufferFrame;
+    };
+
+    // NOTE: we use this layout because we can easily see by the last bit if (0) hot/cool or (1) evicted
+    // x00
+    static const uint64_t hotBits = uint64_t(0);
+    // x10
+    static const uint64_t coolingBits = uint64_t(2);
+    // x01
+    static const uint64_t evictedBits = uint64_t(1);
+
+    static const uint8_t NUMBER_OF_BITS_FOR_TAGGING = 2;
+    // x11
+    static const uint64_t comparisonMask = uint64_t(3);
 };

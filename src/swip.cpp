@@ -2,60 +2,49 @@
 
 #include "buffer_frame.hpp"
 
-Swip::Swip() {
-  // TODO(student) implement
-}
+Swip::Swip() : pageId(INVALID_PAGE_ID << NUMBER_OF_BITS_FOR_TAGGING | evictedBits) {}
 
-Swip::Swip(PageID page_id) {
-  // TODO(student) implement
-}
+Swip::Swip(PageID page_id) : pageId(page_id << NUMBER_OF_BITS_FOR_TAGGING | evictedBits) {}
 
-Swip::Swip(BufferFrame* buffer_frame) {
-  // TODO(student) implement
-}
+Swip::Swip(BufferFrame *buffer_frame) : pBufferFrame(reinterpret_cast<BufferFrame *>(reinterpret_cast<uint64_t>(buffer_frame) << NUMBER_OF_BITS_FOR_TAGGING)) {}
 
 bool Swip::is_swizzled() {
-  // TODO(student) implement
-  return false;
+    return (pageId & comparisonMask) == hotBits;
 };
 
 bool Swip::is_cooling() {
-  // TODO(student) implement
-  return false;
+    return (pageId & comparisonMask) == coolingBits;
 }
 
 bool Swip::is_evicted() {
-  // TODO(student) implement
-  return false;
+    return (pageId & comparisonMask) == evictedBits;
 }
 
 void Swip::swizzle() {
-  // TODO(student) implement
+    this->pageId = this->pageId & ~coolingBits;
 }
 
-void Swip::swizzle(BufferFrame* buffer_frame) {
-  // TODO(student) implement
+void Swip::swizzle(BufferFrame *buffer_frame) {
+    this->pBufferFrame = reinterpret_cast<BufferFrame *>(reinterpret_cast<uint64_t>(buffer_frame)
+            << NUMBER_OF_BITS_FOR_TAGGING);
 }
 
 void Swip::unswizzle() {
-  // TODO(student) implement
+    this->pageId = this->pageId | coolingBits;
 }
 
 void Swip::evict(PageID page_id) {
-  // TODO(student) implement
+    this->pageId = ((page_id << NUMBER_OF_BITS_FOR_TAGGING) | evictedBits);
 }
 
 PageID Swip::page_id() {
-  // TODO(student) implement
-  return 0ul;
+    return (this->pageId >> NUMBER_OF_BITS_FOR_TAGGING);
 }
 
-BufferFrame* Swip::buffer_frame() {
-  // TODO(student) implement
-  return nullptr;
+BufferFrame *Swip::buffer_frame() {
+    return pBufferFrame;
 }
 
-BufferFrame* Swip::buffer_frame_ignore_tags() {
-  // TODO(student) implement
-  return nullptr;
+BufferFrame *Swip::buffer_frame_ignore_tags() {
+    return reinterpret_cast<BufferFrame *>(this->pageId >> NUMBER_OF_BITS_FOR_TAGGING);
 }
