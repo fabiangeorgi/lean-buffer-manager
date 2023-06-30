@@ -12,6 +12,7 @@ static constexpr uint64_t PAGE_SIZE = 4 * KiB;
 // Data region to store the page's payload in. Note that other potential members of the page are also stored in a
 // page, which is the data unit that gets persisted. Thus, if you add further member variables, the payload is
 // smaller than PAGE_SIZE. In other words, the payload size is equal to: PAGE_SIZE - SIZE_OF_PAGE_MEMBERS.
+// TODO: check if I need to change this
 static constexpr uint64_t SIZE_OF_PAGE_MEMBERS = 0;
 
 // Note that we use the two least significant bits for tagging,
@@ -64,5 +65,5 @@ struct BufferFrame {
   Page page{};
 
   // -- TODO(student) Add further functions and members if required.
-  // ...
+  bool dirty = false;
 };

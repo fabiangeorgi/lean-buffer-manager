@@ -6,6 +6,7 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <unordered_set>
+#include <bitset>
 
 #include "buffer_frame.hpp"
 #include "buffer_manager.hpp"

@@ -1,21 +1,19 @@
 #include "buffer_frame.hpp"
 
 std::byte* Page::data() {
-  // TODO(student) implement
-  return nullptr;
+    return *this;
 }
 
 Page::operator std::byte*() { return reinterpret_cast<std::byte*>(this); }
 
 void BufferFrame::mark_dirty() {
-  // TODO(student) implement
+  dirty = true;
 }
 
 void BufferFrame::mark_written_back() {
-  // TODO(student) implement
+  dirty = false;
 }
 
 bool BufferFrame::is_dirty() {
-  // TODO(student) implement
-  return true;
+  return dirty;
 }
