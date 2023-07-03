@@ -5,7 +5,6 @@
 #include <memory>
 #include <random>
 #include <unordered_map>
-#include <queue>
 
 #include "buffer_frame.hpp"
 #include "data_regions.hpp"
@@ -114,6 +113,4 @@ class BufferManager {
 
   // TODO(student) Feel free to add more private member functions and variables.
   // ...
-  // TODO i think this needs to be a queue
-  std::unordered_map<PageID, BufferFrame*> eviction_candidates = {};
 };
