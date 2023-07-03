@@ -42,7 +42,13 @@ PageID Swip::page_id() {
 }
 
 BufferFrame *Swip::buffer_frame() {
-    return pBufferFrame;
+    // we use the pageId here because otherwise we cant shift it
+    // TODO this does not make sense -> this is totally stupid from the test setup perspective -> because I would like to just return the shifted version
+    if (this->is_swizzled()) {
+        return reinterpret_cast<BufferFrame *>(this->pageId >> NUMBER_OF_BITS_FOR_TAGGING);
+    } else {
+        return this->pBufferFrame;
+    }
 }
 
 BufferFrame *Swip::buffer_frame_ignore_tags() {
