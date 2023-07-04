@@ -53,7 +53,7 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         // Resolve cooling Swip
     else if (swip.is_cooling()) {
         swip.swizzle();
-        
+
         _create_cooling_state_share();
         return swip.buffer_frame();
     }
@@ -85,6 +85,7 @@ void BufferManager::register_data_structure(ManagedDataStructure *data_structure
 void BufferManager::_flush(BufferFrame *frame) {
     // TODO(student)
     _ssd_region->write_page(frame->page.data(), frame->page_id);
+    frame->mark_written_back();
 }
 
 void BufferManager::_evict_page() {
