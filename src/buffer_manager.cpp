@@ -55,7 +55,7 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         swip.swizzle();
         _remove_eviction_candidate(swip.buffer_frame());
         // TODO maybe check that it does not directly get back to cooling
-        _create_cooling_state_share();
+//        _create_cooling_state_share();
         return swip.buffer_frame();
     }
         // Resolve evicted Swip
