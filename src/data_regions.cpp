@@ -42,8 +42,7 @@ BufferFrame *VolatileRegion::allocate_frame() {
 void VolatileRegion::free_frame(BufferFrame *frame) {
     // -- TODO(student) manage the region's state so that this frame is indicated as free now. Thus, it can be used and
     // returned in `allocate_frame`.
-    // TODO append at back
-    _free_frames[free_frame_count()] = new(frame) BufferFrame();
+    _free_frames.push_back(new(frame) BufferFrame());
     _free_frame_count++;
 }
 

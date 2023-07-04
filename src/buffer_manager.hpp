@@ -113,4 +113,7 @@ class BufferManager {
 
   // TODO(student) Feel free to add more private member functions and variables.
   // ...
+  // needs to be a FIFO datastructure -> queue does not work, because we need to iterate over it to see if it contains
+  std::vector<BufferFrame*> eviction_candidates = {};
+  // TODO might use map as faster lookup in combination with list -> don't have to iterate over the whole evicition candidates
 };
