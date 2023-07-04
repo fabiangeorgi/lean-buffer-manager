@@ -36,8 +36,11 @@ BufferFrame *BufferManager::allocate_page() {
 
 void BufferManager::free_page(BufferFrame *frame) {
     // TODO(student) implement
-    _volatile_region->free_frame(frame);
+    // use this order because otherwise the page_id is INVALID
+    // in the volatile region we directly overwrite at the frame memory addresss
+    // thus when reading from it again we get not the correct page id back
     _ssd_region->free_page_id(frame->page_id);
+    _volatile_region->free_frame(frame);
 }
 
 BufferFrame *BufferManager::get_frame(Swip &swip) {

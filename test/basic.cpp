@@ -465,6 +465,43 @@ TEST_F(BufferManagerTest, EvictFrames) {
     EXPECT_FALSE(swips[0].is_cooling());
 }
 
+// own tests
+TEST_F(BufferManagerTest, FreeAndAllocatePage) {
+    std::unique_ptr<BufferManager> buffer_manager = create_default_bm();
+    EXPECT_EQ(buffer_manager->_volatile_region->frame_count(), _frame_count);
+    EXPECT_EQ(buffer_manager->_volatile_region->free_frame_count(), _frame_count);
+    EXPECT_EQ(buffer_manager->_ssd_region->page_count(), _page_count);
+    EXPECT_EQ(buffer_manager->_ssd_region->free_page_count(), _page_count);
+
+    BufferFrame *frame_0 = buffer_manager->allocate_page();
+    ASSERT_NE(frame_0, nullptr);
+    EXPECT_EQ(frame_0->page_id, 0);
+    EXPECT_EQ(frame_0->parent_frame, nullptr);
+    EXPECT_FALSE(frame_0->is_dirty());
+
+    BufferFrame *frame_1 = buffer_manager->allocate_page();
+    ASSERT_NE(frame_1, nullptr);
+    EXPECT_EQ(frame_1->page_id, 1);
+    EXPECT_EQ(frame_1->parent_frame, nullptr);
+    EXPECT_FALSE(frame_1->is_dirty());
+
+    EXPECT_EQ(buffer_manager->_volatile_region->free_frame_count(), _frame_count - 2);
+    EXPECT_EQ(buffer_manager->_ssd_region->free_page_count(), _page_count - 2);
+
+    buffer_manager->free_page(frame_0);
+    EXPECT_EQ(buffer_manager->_volatile_region->frame_count(), _frame_count);
+    EXPECT_EQ(buffer_manager->_volatile_region->free_frame_count(), _frame_count - 1);
+    EXPECT_EQ(buffer_manager->_ssd_region->page_count(), _page_count);
+    EXPECT_EQ(buffer_manager->_ssd_region->free_page_count(), _page_count - 1);
+
+    // now re allocate and check that page 0 gets back again
+    BufferFrame *reallocated_frame_0 = buffer_manager->allocate_page();
+    ASSERT_NE(reallocated_frame_0, nullptr);
+    EXPECT_EQ(reallocated_frame_0->page_id, 0);
+    EXPECT_EQ(reallocated_frame_0->parent_frame, nullptr);
+    EXPECT_FALSE(reallocated_frame_0->is_dirty());
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
