@@ -273,6 +273,32 @@ TEST_F(VolatileDataRegionTest, AllocateFrame) {
     EXPECT_EQ(region.free_frame_count(), 30);
 }
 
+// own test
+TEST_F(VolatileDataRegionTest, AllocateAndFreeFrames) {
+    VolatileRegion region{30};
+    ASSERT_EQ(region.frame_count(), 30);
+    ASSERT_EQ(region.free_frame_count(), 30);
+
+    BufferFrame *frames = region.frames();
+    for (uint32_t frame_idx = 0; frame_idx < region.frame_count(); ++frame_idx) {
+        ASSERT_NE(frames + frame_idx, nullptr);
+    }
+
+    BufferFrame *frame_0 = region.allocate_frame();
+    EXPECT_NE(frame_0, nullptr);
+    EXPECT_EQ(frame_0, frames + 0);
+    EXPECT_TRUE(region.address_in_range(frame_0));
+    EXPECT_EQ(region.free_frame_count(), 29);
+    region.free_frame(frame_0);
+    EXPECT_EQ(region.free_frame_count(), 30);
+
+    BufferFrame *frame_1 = region.allocate_frame();
+    EXPECT_NE(frame_1, nullptr);
+    EXPECT_EQ(frame_1, frames + 0);
+    EXPECT_TRUE(region.address_in_range(frame_1));
+    EXPECT_EQ(region.free_frame_count(), 29);
+}
+
 TEST_F(SSDDataRegionTest, WriteRead) {
     const auto page_count = 10;
     SSDRegion region{_ssd_path, page_count};
