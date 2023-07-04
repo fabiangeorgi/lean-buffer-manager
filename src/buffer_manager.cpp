@@ -30,7 +30,7 @@ BufferFrame *BufferManager::allocate_page() {
 
     auto *bf = _volatile_region->allocate_frame();
     bf->page_id = pageId;
-
+    _create_cooling_state_share();
     return bf;
 }
 
@@ -50,16 +50,16 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         return swip.buffer_frame();
     }
 
-    // Resolve cooling Swip
+        // Resolve cooling Swip
     else if (swip.is_cooling()) {
         swip.swizzle();
-        // TODO 50% rule einhalten
+        
+        _create_cooling_state_share();
         return swip.buffer_frame();
     }
-    // Resolve evicted Swip
+        // Resolve evicted Swip
     else {
         auto pageId = swip.page_id();
-        // TODO check before if enough frames allocated
         if (_volatile_region->free_frame_count() == 0) {
             _evict_page();
         }
@@ -68,11 +68,12 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         bf->page_id = pageId;
         _ssd_region->read_page(bf->page.data(), pageId);
         swip.swizzle(bf);
+
+        _create_cooling_state_share();
         return bf;
     }
     // Ensure the number of cooling frames if a frame was allocated in this function since this allocation might have
     // triggered an eviction.
-    // TODO
 }
 
 void BufferManager::register_callbacks(Callbacks &&callbacks) { _callbacks = std::move(callbacks); }
@@ -115,6 +116,7 @@ BufferFrame *BufferManager::_pop_eviction_candidate() {
 void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
     // TODO(student) implement
     // only add if not eviction candidate
+    // TODO: check later: can we remove this here and move this condition somewhere else?
     if (!_has_eviction_candidate(frame)) {
         eviction_candidates.push_back(frame);
     }
@@ -135,4 +137,49 @@ BufferFrame *BufferManager::_random_frame() {
     // Do not modify.
     const uint64_t random_frame_offset = _distribution(_random_generator);
     return _volatile_region->frames() + random_frame_offset;
+}
+
+void BufferManager::_create_cooling_state_share() {
+    auto const frameCount = _volatile_region->frame_count();
+    auto const framesNeededForCooling = static_cast<uint64_t>(frameCount * SHARE_USED_PAGES_BEFORE_COOLING);
+    // TODO we can later change this logic to just use free frame count, but for now makes logic easier to implement
+    auto const currentlyUsedFrames = frameCount - _volatile_region->free_frame_count();
+
+    if (currentlyUsedFrames < frameCount) {
+        // we don't have the needed amount of frames for things to be cooled
+        return;
+    }
+
+    // if we do -> add as much to cooling state as we need to reach quota
+    while (_eviction_candidate_count() < framesNeededForCooling) {
+        auto eviction_candidate = _random_frame();
+        auto swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
+        // if swip is not hot -> already evicted, cooling or free -> get new random frame
+        while (!swip.is_swizzled()) {
+            eviction_candidate = _random_frame();
+            swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
+        }
+
+        // we found a hot one -> check if all its children are not hot -> then we can use it
+        // otherwise use the children -> children might need to propagate down again
+        Swip &iterator = swip;
+        auto childrenIsSwizzledIteratorFunction = [&iterator](Swip &swip) {
+            if (swip.is_swizzled()) {
+                iterator = swip;
+                return true;
+            }
+            return false;
+        };
+
+        while (true) {
+            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(eviction_candidate,
+                                                                            childrenIsSwizzledIteratorFunction);
+            if (!atleastOneChildrenIsSwizzled) {
+                // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
+                _add_eviction_candidate(iterator.buffer_frame());
+                iterator.unswizzle();
+                break;
+            }
+        }
+    }
 }

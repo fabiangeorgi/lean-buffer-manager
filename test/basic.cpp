@@ -502,6 +502,39 @@ TEST_F(BufferManagerTest, FreeAndAllocatePage) {
     EXPECT_FALSE(reallocated_frame_0->is_dirty());
 }
 
+// does not work -> we need to add a data structure with callback
+//TEST_F(BufferManagerTest, EvictionCandidate) {
+//    std::unique_ptr<BufferManager> buffer_manager = create_default_bm();
+//    EXPECT_EQ(buffer_manager->_volatile_region->frame_count(), _frame_count);
+//    EXPECT_EQ(buffer_manager->_volatile_region->free_frame_count(), _frame_count);
+//    EXPECT_EQ(buffer_manager->_ssd_region->page_count(), _page_count);
+//    EXPECT_EQ(buffer_manager->_ssd_region->free_page_count(), _page_count);
+//
+//    for (auto i = 0; i < _frame_count; i++) {
+//        BufferFrame *frame_0 = buffer_manager->allocate_page();
+//        ASSERT_NE(frame_0, nullptr);
+//        EXPECT_EQ(frame_0->page_id, i);
+//        EXPECT_EQ(frame_0->parent_frame, nullptr);
+//        EXPECT_FALSE(frame_0->is_dirty());
+//    }
+//
+//    //_frame_count = 256
+//    // 10% -> 25 eviction candidates
+//    EXPECT_EQ(buffer_manager->_eviction_candidate_count(), 25);
+//    // all in memory
+//    EXPECT_EQ(buffer_manager->_volatile_region->free_frame_count(), 0);
+//    EXPECT_EQ(buffer_manager->_ssd_region->free_page_count(), _page_count - _frame_count);
+//
+//    BufferFrame *frame_0 = buffer_manager->allocate_page();
+//    ASSERT_NE(frame_0, nullptr);
+//    EXPECT_EQ(frame_0->parent_frame, nullptr);
+//    EXPECT_FALSE(frame_0->is_dirty());
+//
+//    // one needs to be evicted
+//    EXPECT_EQ(buffer_manager->_volatile_region->free_frame_count(), 0);
+//    EXPECT_EQ(buffer_manager->_ssd_region->free_page_count(), _page_count - _frame_count - 1);
+//}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
