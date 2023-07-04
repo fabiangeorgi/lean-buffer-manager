@@ -55,7 +55,7 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         swip.swizzle();
         _remove_eviction_candidate(swip.buffer_frame());
         // TODO maybe check that it does not directly get back to cooling
-//        _create_cooling_state_share();
+        _create_cooling_state_share();
         return swip.buffer_frame();
     }
         // Resolve evicted Swip
@@ -142,17 +142,18 @@ BufferFrame *BufferManager::_random_frame() {
 
 void BufferManager::_create_cooling_state_share() {
     auto const frameCount = _volatile_region->frame_count();
-    auto const framesNeededForCooling = static_cast<uint64_t>(frameCount * SHARE_USED_PAGES_BEFORE_COOLING);
+    auto const framesNeededInCoolingStage = static_cast<uint64_t>(frameCount * SHARE_COOLING_PAGES);
+    auto const fiftyPercentOfFrames =  static_cast<uint64_t>(frameCount * SHARE_USED_PAGES_BEFORE_COOLING);
     // TODO we can later change this logic to just use free frame count, but for now makes logic easier to implement
     auto const currentlyUsedFrames = frameCount - _volatile_region->free_frame_count();
 
-    if (currentlyUsedFrames < frameCount) {
+    if (currentlyUsedFrames < fiftyPercentOfFrames) {
         // we don't have the needed amount of frames for things to be cooled
         return;
     }
 
     // if we do -> add as much to cooling state as we need to reach quota
-    while (_eviction_candidate_count() < framesNeededForCooling) {
+    while (_eviction_candidate_count() < framesNeededInCoolingStage) {
         auto eviction_candidate = _random_frame();
         auto swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         // if swip is not hot -> already evicted, cooling or free -> get new random frame
