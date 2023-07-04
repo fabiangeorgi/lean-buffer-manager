@@ -53,7 +53,8 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         // Resolve cooling Swip
     else if (swip.is_cooling()) {
         swip.swizzle();
-
+        _remove_eviction_candidate(swip.buffer_frame());
+        // TODO maybe check that it does not directly get back to cooling
         _create_cooling_state_share();
         return swip.buffer_frame();
     }
@@ -91,7 +92,6 @@ void BufferManager::_flush(BufferFrame *frame) {
 void BufferManager::_evict_page() {
     // Flush the page if dirty. Set the page id for the swip pointing to the page. Free the frame.
     // TODO(student)
-    // TODO eviction logic
     auto *bf = _pop_eviction_candidate();
     if (bf->is_dirty()) {
         _flush(bf);
@@ -175,6 +175,7 @@ void BufferManager::_create_cooling_state_share() {
         while (true) {
             bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(eviction_candidate,
                                                                             childrenIsSwizzledIteratorFunction);
+            // check that at least one child is swizzled
             if (!atleastOneChildrenIsSwizzled) {
                 // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
                 _add_eviction_candidate(iterator.buffer_frame());
