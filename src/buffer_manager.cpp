@@ -118,9 +118,9 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
     // TODO(student) implement
     // only add if not eviction candidate
     // TODO: check later: can we remove this here and move this condition somewhere else?
-//    if (!_has_eviction_candidate(frame)) {
+    if (!_has_eviction_candidate(frame)) {
         eviction_candidates.push_back(frame);
-//    }
+    }
 }
 
 void BufferManager::_remove_eviction_candidate(const BufferFrame *frame) {
