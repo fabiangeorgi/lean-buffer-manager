@@ -89,7 +89,7 @@ SSDRegion::SSDRegion(const std::filesystem::path &file_path, uint64_t page_count
     // O_TRUNC -> TRUNCATE to 0 if exists
     // O_RDWR -> READ and WRITE
     // O_DIRECT -> direct disk access -> kernel does not get involved
-    _file = open(file_path.c_str(), O_CREAT | O_RDWR | O_DIRECT | O_TRUNC);
+    _file = open(file_path.c_str(), O_CREAT | O_RDWR | O_DIRECT | O_TRUNC, 0600);
     // should contain page_count pages
     auto dummy_data = (uint8_t *) aligned_alloc(sizeof(Page), page_count * sizeof(Page));
     pwrite(_file, dummy_data, page_count * sizeof(Page), 0);
