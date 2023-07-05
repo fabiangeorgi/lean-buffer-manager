@@ -97,9 +97,9 @@ void BufferManager::_evict_page() {
         _flush(bf);
     }
 
-    _volatile_region->free_frame(bf);
     auto swip = _callbacks.get_parent(bf, _managed_data_structure);
     swip.evict(bf->page_id);
+    _volatile_region->free_frame(bf);
 }
 
 bool BufferManager::_has_eviction_candidate(const BufferFrame *frame) {
@@ -141,6 +141,7 @@ BufferFrame *BufferManager::_random_frame() {
 }
 
 void BufferManager::_create_cooling_state_share() {
+    // TODO somewhere here is a endless loop
     auto const frameCount = _volatile_region->frame_count();
     auto const framesNeededInCoolingStage = static_cast<uint64_t>(frameCount * SHARE_COOLING_PAGES);
     auto const fiftyPercentOfFrames =  static_cast<uint64_t>(frameCount * SHARE_USED_PAGES_BEFORE_COOLING);
@@ -165,6 +166,7 @@ void BufferManager::_create_cooling_state_share() {
         // we found a hot one -> check if all its children are not hot -> then we can use it
         // otherwise use the children -> children might need to propagate down again
         Swip &iterator = swip;
+        // when deleting: children could already be not evicted
         auto childrenIsSwizzledIteratorFunction = [&iterator](Swip &swip) {
             if (swip.is_swizzled()) {
                 iterator = swip;
@@ -174,7 +176,7 @@ void BufferManager::_create_cooling_state_share() {
         };
 
         while (true) {
-            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(eviction_candidate,
+            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(swip.buffer_frame(),
                                                                             childrenIsSwizzledIteratorFunction);
             // check that at least one child is swizzled
             if (!atleastOneChildrenIsSwizzled) {
