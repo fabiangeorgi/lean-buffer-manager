@@ -116,4 +116,8 @@ class BufferManager {
   std::list<BufferFrame*> eviction_list = {};
 
   void _create_cooling_state_share(BufferFrame* bf);
+
+    uint64_t FRAME_COUNT_MAX;
+    uint64_t FRAMES_NEEDED_IN_COOLING_STAGE;
+    uint64_t FIFTY_PERCENT_FRAMES;
 };

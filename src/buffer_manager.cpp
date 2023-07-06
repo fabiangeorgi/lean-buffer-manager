@@ -11,13 +11,15 @@
 #include "swip.hpp"
 
 BufferManager::BufferManager(std::unique_ptr<VolatileRegion> volatile_region, std::unique_ptr<SSDRegion> ssd_region)
-        : _volatile_region(std::move(volatile_region)), _ssd_region(std::move(ssd_region)) {
+        : _volatile_region(std::move(volatile_region)), _ssd_region(std::move(ssd_region)),
+        FRAME_COUNT_MAX( _volatile_region->frame_count()),
+        FRAMES_NEEDED_IN_COOLING_STAGE(static_cast<uint64_t>(FRAME_COUNT_MAX * SHARE_COOLING_PAGES)),
+        FIFTY_PERCENT_FRAMES(static_cast<uint64_t>(FRAME_COUNT_MAX * SHARE_USED_PAGES_BEFORE_COOLING)) {
     // Do not modify the lines below.
     _random_generator.seed(42);
     _distribution = std::uniform_int_distribution<uint64_t>(0, _volatile_region->frame_count() - 1);
 
     // ...
-    // for performance -> resize and reserve vector
 }
 
 BufferFrame *BufferManager::allocate_page() {
@@ -140,18 +142,14 @@ BufferFrame *BufferManager::_random_frame() {
 }
 
 void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
-    auto const frameCount = _volatile_region->frame_count();
-    auto const framesNeededInCoolingStage = static_cast<uint64_t>(frameCount * SHARE_COOLING_PAGES);
-    auto const fiftyPercentOfFrames =  static_cast<uint64_t>(frameCount * SHARE_USED_PAGES_BEFORE_COOLING);
-    auto const currentlyUsedFrames = frameCount - _volatile_region->free_frame_count();
-
-    if (currentlyUsedFrames < fiftyPercentOfFrames) {
+    auto const currentlyUsedFrames = FRAME_COUNT_MAX - _volatile_region->free_frame_count();
+    if (currentlyUsedFrames < FIFTY_PERCENT_FRAMES) {
         // we don't have the needed amount of frames for things to be cooled
         return;
     }
 
     // if we do -> add as much to cooling state as we need to reach quota
-    while (_eviction_candidate_count() < framesNeededInCoolingStage) {
+    while (_eviction_candidate_count() < FRAMES_NEEDED_IN_COOLING_STAGE) {
         auto eviction_candidate = _random_frame();
         // if swip is not hot -> already evicted, cooling or free -> get new random frame
 
