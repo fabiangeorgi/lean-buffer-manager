@@ -160,7 +160,7 @@ void BufferManager::_create_cooling_state_share() {
         auto eviction_candidate = _random_frame();
         auto swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         // if swip is not hot -> already evicted, cooling or free -> get new random frame
-        while (!swip.is_swizzled()) {
+        while (!swip.is_swizzled() && !_has_eviction_candidate(swip.buffer_frame())) {
             eviction_candidate = _random_frame();
             swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         }
@@ -169,8 +169,8 @@ void BufferManager::_create_cooling_state_share() {
         // otherwise use the children -> children might need to propagate down again
         Swip &iterator = swip;
         // when deleting: children could already be not evicted
-        auto childrenIsSwizzledIteratorFunction = [&iterator](Swip &swip) {
-            if (swip.is_swizzled()) {
+        auto childrenIsSwizzledIteratorFunction = [&iterator, this](Swip &swip) {
+            if (swip.is_swizzled() && !this->_has_eviction_candidate(swip.buffer_frame())) {
                 std::cout << "Swip is swizzled: " << swip.buffer_frame()->page_id << std::endl;
                 iterator = swip;
                 return true;
