@@ -15,17 +15,14 @@
 
 VolatileRegion::VolatileRegion(uint64_t frame_count) : _frame_count{frame_count} {
     // -- TODO(student) get a memory region for volatile buffer frames.
-    // TODO check flags
-    _data = reinterpret_cast<std::byte *>(mmap(nullptr, frame_count * sizeof(BufferFrame), PROT_READ | PROT_WRITE,
-                                               MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
-    madvise(_data, frame_count * sizeof(BufferFrame), MADV_HUGEPAGE);
+    _data = reinterpret_cast<std::byte *>(new BufferFrame[frame_count]);
     // TODO(student) uncomment `init_free_frames` call in line below once data is allocated.
     _init_free_frames();
 }
 
 VolatileRegion::~VolatileRegion() {
     // TODO(student) free memory
-    munmap(frames(), frame_count() * sizeof(BufferFrame));
+    delete[] _data;
 }
 
 BufferFrame *VolatileRegion::allocate_frame() {
@@ -91,10 +88,8 @@ SSDRegion::SSDRegion(const std::filesystem::path &file_path, uint64_t page_count
     // O_DIRECT -> direct disk access -> kernel does not get involved
     _file = open(file_path.c_str(), O_CREAT | O_RDWR | O_DIRECT | O_TRUNC, 0600);
     // should contain page_count pages
-    auto dummy_data = (uint8_t *) aligned_alloc(sizeof(Page), page_count * sizeof(Page));
-    pwrite(_file, dummy_data, page_count * sizeof(Page), 0);
+    ftruncate(_file, page_count * sizeof(Page));
 
-    free(dummy_data);
     _init_free_pages();
 }
 

@@ -93,6 +93,7 @@ void BufferManager::_evict_page() {
     // Flush the page if dirty. Set the page id for the swip pointing to the page. Free the frame.
     // TODO(student)
     auto *bf = _pop_eviction_candidate();
+    std::cout << "EVICTING PAGE: " << bf->page_id << std::endl;
     if (bf->is_dirty()) {
         _flush(bf);
     }
@@ -104,6 +105,7 @@ void BufferManager::_evict_page() {
 
 bool BufferManager::_has_eviction_candidate(const BufferFrame *frame) {
     // TODO(student) implement
+    std::cout << frame->page_id << std::endl;
     return std::find(eviction_candidates.begin(), eviction_candidates.end(), frame) != eviction_candidates.end();
 }
 
