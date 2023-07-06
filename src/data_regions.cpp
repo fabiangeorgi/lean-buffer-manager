@@ -27,15 +27,13 @@ VolatileRegion::~VolatileRegion() {
 BufferFrame *VolatileRegion::allocate_frame() {
     // Enough memory frames need to be allocated. Thus, you need to ensure that at least one frame is available before
     // calling this function. The buffer manager ensures this with the eviction policy.
-    auto value = _free_frames[0];
-    _free_frames.erase(_free_frames.begin());
-    _free_frame_count--;
+    auto value = _free_frames.back();
+    _free_frames.pop_back();
     return value;
 }
 
 void VolatileRegion::free_frame(BufferFrame *frame) {
-    _free_frames.insert(_free_frames.begin(), new(frame) BufferFrame());
-    _free_frame_count++;
+    _free_frames.push_back(new (frame) BufferFrame());
 }
 
 BufferFrame *VolatileRegion::frames() {
@@ -47,7 +45,7 @@ uint64_t VolatileRegion::frame_count() const {
 }
 
 uint64_t VolatileRegion::free_frame_count() const {
-    return _free_frame_count;
+    return _free_frames.size();
 }
 
 void VolatileRegion::_init_free_frames() {
@@ -58,12 +56,11 @@ void VolatileRegion::_init_free_frames() {
     // for `Placement new` in cppreference.
     _free_frames.reserve(frame_count());
 
-    for (auto i = 0; i < frame_count(); i++) {
+    for (auto i = frame_count() - 1; i > 0; i--) {
         auto *bf = new(frames_begin + i) BufferFrame();
         _free_frames.push_back(bf);
     }
-
-    _free_frame_count = _frame_count;
+    _free_frames.push_back(new(frames_begin) BufferFrame());
 }
 
 ///////////////////////////////////////////////////////////
@@ -90,17 +87,17 @@ uint64_t SSDRegion::page_count() const {
 }
 
 uint64_t SSDRegion::free_page_count() const {
-    return _free_pages.size();
+    return _free_pages2.size();
 }
 
 PageID SSDRegion::allocate_page_id() {
-    PageID freePageId = _free_pages.front();
-    _free_pages.pop_front();
+    PageID freePageId = _free_pages2.back();
+    _free_pages2.pop_back();
     return freePageId;
 }
 
 void SSDRegion::free_page_id(PageID page_id) {
-    _free_pages.push_front(page_id);
+    _free_pages2.push_back(page_id);
 }
 
 SSDRegion::~SSDRegion() {
@@ -117,7 +114,8 @@ void SSDRegion::write_page(const std::byte *source, PageID page_id) {
 }
 
 void SSDRegion::_init_free_pages() {
-    for (PageID i = 0; i < _page_count; i++) {
-        _free_pages.push_back(i);
+    for (PageID i = _page_count - 1; i > 0; i--) {
+        _free_pages2.push_back(i);
     }
+    _free_pages2.push_back(0);
 }

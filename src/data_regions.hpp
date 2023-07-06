@@ -62,7 +62,7 @@ private:
 
     std::byte *_data = nullptr;
     const uint64_t _frame_count;
-    uint64_t _free_frame_count;
+    [[maybe_unused]] uint64_t _free_frame_count;
     std::vector<BufferFrame *> _free_frames{};
 };
 
@@ -109,5 +109,6 @@ private:
 
     int32_t _file;
     uint64_t _page_count;
-    std::deque<PageID> _free_pages{};
+    std::vector<PageID> _free_pages2{};
+//    std::deque<PageID> _free_pages{};
 };
