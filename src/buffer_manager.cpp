@@ -5,6 +5,7 @@
 #include <iterator>
 #include <memory>
 #include <random>
+#include <iostream>
 
 #include "buffer_frame.hpp"
 #include "swip.hpp"
@@ -119,6 +120,7 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
     // only add if not eviction candidate
     // TODO: check later: can we remove this here and move this condition somewhere else?
     if (!_has_eviction_candidate(frame)) {
+        std::cout << "Push to eviciton page: " << frame->page_id << std::endl;
         eviction_candidates.push_back(frame);
     }
 }
@@ -169,6 +171,7 @@ void BufferManager::_create_cooling_state_share() {
         // when deleting: children could already be not evicted
         auto childrenIsSwizzledIteratorFunction = [&iterator](Swip &swip) {
             if (swip.is_swizzled()) {
+                std::cout << "Swip is swizzled: " << swip.buffer_frame()->page_id << std::endl;
                 iterator = swip;
                 return true;
             }
