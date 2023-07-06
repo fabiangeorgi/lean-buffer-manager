@@ -100,8 +100,11 @@ void BufferManager::_evict_page() {
         _flush(bf);
     }
 
-    auto swip = _callbacks.get_parent(bf, _managed_data_structure);
-    swip.evict(bf->page_id);
+    if (_callbacks.get_parent) {
+        auto swip = _callbacks.get_parent(bf, _managed_data_structure);
+        swip.evict(bf->page_id);
+    }
+
     _volatile_region->free_frame(bf);
 }
 
