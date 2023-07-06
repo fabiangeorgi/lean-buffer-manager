@@ -30,10 +30,12 @@ BufferFrame *BufferManager::allocate_page() {
     auto *bf = _volatile_region->allocate_frame();
     bf->page_id = pageId;
     _create_cooling_state_share(bf);
+    std::cout << "ALLOCATED PAGE: " << bf->page_id << std::endl;
     return bf;
 }
 
 void BufferManager::free_page(BufferFrame *frame) {
+    std::cout << "FREE PAGE: " << frame->page_id << std::endl;
     // use this order because otherwise the page_id is INVALID
     // in the volatile region we directly overwrite at the frame memory addresss
     // thus when reading from it again we get not the correct page id back
@@ -44,12 +46,14 @@ void BufferManager::free_page(BufferFrame *frame) {
 BufferFrame *BufferManager::get_frame(Swip &swip) {
     // Resolve swizzled Swip
     if (swip.is_swizzled()) {
+        std::cout << "GET FRAME HOT: " << swip.buffer_frame()->page_id << std::endl;
         return swip.buffer_frame();
     }
 
         // Resolve cooling Swip
     else if (swip.is_cooling()) {
         swip.swizzle();
+        std::cout << "GET FRAME COLD: " << swip.buffer_frame()->page_id << std::endl;
         _remove_eviction_candidate(swip.buffer_frame());
         _create_cooling_state_share(swip.buffer_frame());
         return swip.buffer_frame();
@@ -68,6 +72,7 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         _ssd_region->read_page(bf->page.data(), pageId);
         swip.swizzle(bf);
 
+        std::cout << "GET FRAME EVICTED: " << swip.buffer_frame()->page_id << std::endl;
         return bf;
     }
     // Ensure the number of cooling frames if a frame was allocated in this function since this allocation might have
