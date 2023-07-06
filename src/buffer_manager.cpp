@@ -138,7 +138,7 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
 
 void BufferManager::_remove_eviction_candidate(const BufferFrame *frame) {
     std::cout << "REMOVING EVICTION CANDIDATE " << frame->page_id << std::endl;
-    eviction_candidates.erase(std::remove(eviction_candidates.begin(), eviction_candidates.end(), frame),
+    eviction_candidates.erase(std::remove(eviction_candidates.begin(), eviction_candidates.end(), const_cast<BufferFrame*>(frame)),
                               eviction_candidates.end());
     std::cout << "EVICTION CANDIDATES AFTER DELETE: ";
     for (auto element : eviction_candidates) {
