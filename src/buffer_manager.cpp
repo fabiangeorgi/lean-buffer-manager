@@ -28,13 +28,11 @@ BufferFrame *BufferManager::allocate_page() {
     auto *bf = _volatile_region->allocate_frame();
     auto pageId = _ssd_region->allocate_page_id();
     bf->page_id = pageId;
-    std::cout << "ALLOCATED PAGE: " << bf->page_id << std::endl;
     _create_cooling_state_share(bf);
     return bf;
 }
 
 void BufferManager::free_page(BufferFrame *frame) {
-    std::cout << "FREE PAGE: " << frame->page_id << std::endl;
     // use this order because otherwise the page_id is INVALID
     // in the volatile region we directly overwrite at the frame memory addresss
     // thus when reading from it again we get not the correct page id back
@@ -45,14 +43,12 @@ void BufferManager::free_page(BufferFrame *frame) {
 BufferFrame *BufferManager::get_frame(Swip &swip) {
     // Resolve swizzled Swip
     if (swip.is_swizzled()) {
-        std::cout << "GET FRAME HOT: " << swip.buffer_frame()->page_id << std::endl;
         return swip.buffer_frame();
     }
 
         // Resolve cooling Swip
     else if (swip.is_cooling()) {
         swip.swizzle();
-        std::cout << "GET FRAME COLD: " << swip.buffer_frame()->page_id << std::endl;
         _remove_eviction_candidate(swip.buffer_frame());
         _create_cooling_state_share(swip.buffer_frame());
         return swip.buffer_frame();
@@ -71,7 +67,6 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         swip.swizzle(bf);
         _ssd_region->read_page(bf->page.data(), pageId);
 
-        std::cout << "GET FRAME EVICTED: " << swip.buffer_frame()->page_id << std::endl;
         return bf;
     }
     // Ensure the number of cooling frames if a frame was allocated in this function since this allocation might have
@@ -85,16 +80,13 @@ void BufferManager::register_data_structure(ManagedDataStructure *data_structure
 }
 
 void BufferManager::_flush(BufferFrame *frame) {
-    // TODO(student)
     _ssd_region->write_page(frame->page.data(), frame->page_id);
     frame->mark_written_back();
 }
 
 void BufferManager::_evict_page() {
     // Flush the page if dirty. Set the page id for the swip pointing to the page. Free the frame.
-    // TODO(student)
     auto *bf = _pop_eviction_candidate();
-    std::cout << "EVICTING PAGE: " << bf->page_id << std::endl;
     if (bf->is_dirty()) {
         _flush(bf);
     }
@@ -108,15 +100,7 @@ void BufferManager::_evict_page() {
 }
 
 bool BufferManager::_has_eviction_candidate(const BufferFrame *frame) {
-    std::cout << "CHECKING EVICTION CANDIDATE " << frame->page_id;
-    std::cout << " [";
-    for (auto element : eviction_candidates) {
-        std::cout << element->page_id << ", ";
-    }
-    std::cout << "]";
-    bool result = std::find(eviction_candidates.begin(), eviction_candidates.end(), frame) != eviction_candidates.end();
-    std::cout << " | Result: " << result << std::endl;
-    return result;
+    return std::find(eviction_candidates.begin(), eviction_candidates.end(), frame) != eviction_candidates.end();
 }
 
 BufferFrame *BufferManager::_pop_eviction_candidate() {
@@ -127,7 +111,6 @@ BufferFrame *BufferManager::_pop_eviction_candidate() {
 
 void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
     if (!_has_eviction_candidate(frame)) {
-        std::cout << "ADDING EVICTION CANDIDATE: " << frame->page_id << std::endl;
         eviction_candidates.push_back(frame);
         if (_callbacks.get_parent) {
             Swip& swip = _callbacks.get_parent(frame, _managed_data_structure);
@@ -137,14 +120,8 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
 }
 
 void BufferManager::_remove_eviction_candidate(const BufferFrame *frame) {
-    std::cout << "REMOVING EVICTION CANDIDATE " << frame->page_id << std::endl;
-    eviction_candidates.erase(std::remove(eviction_candidates.begin(), eviction_candidates.end(), const_cast<BufferFrame*>(frame)),
+    eviction_candidates.erase(std::remove(eviction_candidates.begin(), eviction_candidates.end(), frame),
                               eviction_candidates.end());
-    std::cout << "EVICTION CANDIDATES AFTER DELETE: ";
-    for (auto element : eviction_candidates) {
-        std::cout << element->page_id << " ";
-    }
-    std::cout << std::endl;
 }
 
 uint32_t BufferManager::_eviction_candidate_count() {
@@ -200,18 +177,8 @@ void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
             if (!atleastOneChildrenIsSwizzled) {
                 // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
                 _add_eviction_candidate(eviction_candidate);
-                std::cout << "EVICTION CANDIDATES: ";
-                for (auto element : eviction_candidates) {
-                    std::cout << element->page_id << " ";
-                }
-                std::cout << std::endl;
                 break;
             }
         }
     }
-    std::cout << "FINAL EVICTION CANDIDATES: ";
-    for (auto element : eviction_candidates) {
-        std::cout << element->page_id << " ";
-    }
-    std::cout << std::endl;
 }
