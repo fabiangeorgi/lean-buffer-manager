@@ -28,8 +28,8 @@ BufferFrame *BufferManager::allocate_page() {
     auto *bf = _volatile_region->allocate_frame();
     auto pageId = _ssd_region->allocate_page_id();
     bf->page_id = pageId;
-    _create_cooling_state_share(bf);
     std::cout << "ALLOCATED PAGE: " << bf->page_id << std::endl;
+    _create_cooling_state_share(bf);
     return bf;
 }
 
