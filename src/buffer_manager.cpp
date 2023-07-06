@@ -31,7 +31,7 @@ BufferFrame *BufferManager::allocate_page() {
 
     auto *bf = _volatile_region->allocate_frame();
     bf->page_id = pageId;
-    _create_cooling_state_share();
+    _create_cooling_state_share(bf);
     return bf;
 }
 
@@ -55,8 +55,7 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
     else if (swip.is_cooling()) {
         swip.swizzle();
         _remove_eviction_candidate(swip.buffer_frame());
-        // TODO maybe check that it does not directly get back to cooling
-        _create_cooling_state_share();
+        _create_cooling_state_share(swip.buffer_frame());
         return swip.buffer_frame();
     }
         // Resolve evicted Swip
@@ -71,7 +70,7 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         _ssd_region->read_page(bf->page.data(), pageId);
         swip.swizzle(bf);
 
-        _create_cooling_state_share();
+        _create_cooling_state_share(bf);
         return bf;
     }
     // Ensure the number of cooling frames if a frame was allocated in this function since this allocation might have
@@ -120,7 +119,10 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
     // only add if not eviction candidate
     // TODO: check later: can we remove this here and move this condition somewhere else?
     if (!_has_eviction_candidate(frame)) {
-        std::cout << "Push to eviciton page: " << frame->page_id << std::endl;
+        if (_callbacks.get_parent) {
+            Swip& swip = _callbacks.get_parent(frame, _managed_data_structure);
+            swip.unswizzle();
+        }
         eviction_candidates.push_back(frame);
     }
 }
@@ -142,7 +144,7 @@ BufferFrame *BufferManager::_random_frame() {
     return _volatile_region->frames() + random_frame_offset;
 }
 
-void BufferManager::_create_cooling_state_share() {
+void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
     // TODO somewhere here is a endless loop
     auto const frameCount = _volatile_region->frame_count();
     auto const framesNeededInCoolingStage = static_cast<uint64_t>(frameCount * SHARE_COOLING_PAGES);
@@ -158,20 +160,24 @@ void BufferManager::_create_cooling_state_share() {
     // if we do -> add as much to cooling state as we need to reach quota
     while (_eviction_candidate_count() < framesNeededInCoolingStage) {
         auto eviction_candidate = _random_frame();
-        auto swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         // if swip is not hot -> already evicted, cooling or free -> get new random frame
-        while (!swip.is_swizzled() && !_has_eviction_candidate(swip.buffer_frame())) {
-            eviction_candidate = _random_frame();
-            swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
+
+        if (eviction_candidate == bf || eviction_candidate->page_id == INVALID_PAGE_ID) {
+            continue;
+        }
+
+        if (!_callbacks.iterate_children) {
+            _add_eviction_candidate(eviction_candidate);
+            continue;
         }
 
         // we found a hot one -> check if all its children are not hot -> then we can use it
         // otherwise use the children -> children might need to propagate down again
+        auto swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         Swip &iterator = swip;
         // when deleting: children could already be not evicted
-        auto childrenIsSwizzledIteratorFunction = [&iterator, this](Swip &swip) {
-            if (swip.is_swizzled() && !this->_has_eviction_candidate(swip.buffer_frame())) {
-                std::cout << "Swip is swizzled: " << swip.buffer_frame()->page_id << std::endl;
+        auto childrenIsSwizzledIteratorFunction = [&iterator](Swip &swip) {
+            if (swip.is_swizzled()) {
                 iterator = swip;
                 return true;
             }
@@ -185,7 +191,6 @@ void BufferManager::_create_cooling_state_share() {
             if (!atleastOneChildrenIsSwizzled) {
                 // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
                 _add_eviction_candidate(iterator.buffer_frame());
-                iterator.unswizzle();
                 break;
             }
         }

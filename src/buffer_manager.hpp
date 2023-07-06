@@ -117,5 +117,5 @@ class BufferManager {
   std::vector<BufferFrame*> eviction_candidates = {};
   // TODO might use map as faster lookup in combination with list -> don't have to iterate over the whole evicition candidates
 
-  void _create_cooling_state_share();
+  void _create_cooling_state_share(BufferFrame* bf);
 };
