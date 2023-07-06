@@ -121,11 +121,11 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
     // only add if not eviction candidate
     // TODO: check later: can we remove this here and move this condition somewhere else?
     if (!_has_eviction_candidate(frame)) {
+        eviction_candidates.push_back(frame);
         if (_callbacks.get_parent) {
             Swip& swip = _callbacks.get_parent(frame, _managed_data_structure);
             swip.unswizzle();
         }
-        eviction_candidates.push_back(frame);
     }
 }
 
