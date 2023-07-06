@@ -15,14 +15,17 @@
 
 VolatileRegion::VolatileRegion(uint64_t frame_count) : _frame_count{frame_count} {
     // -- TODO(student) get a memory region for volatile buffer frames.
-    _data = reinterpret_cast<std::byte *>(new BufferFrame[frame_count]);
+    // TODO check flags
+    _data = reinterpret_cast<std::byte *>(mmap(nullptr, frame_count * sizeof(BufferFrame), PROT_READ | PROT_WRITE,
+                                               MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+    madvise(_data, frame_count * sizeof(BufferFrame), MADV_HUGEPAGE);
     // TODO(student) uncomment `init_free_frames` call in line below once data is allocated.
     _init_free_frames();
 }
 
 VolatileRegion::~VolatileRegion() {
     // TODO(student) free memory
-    delete[] _data;
+    munmap(frames(), frame_count() * sizeof(BufferFrame));
 }
 
 BufferFrame *VolatileRegion::allocate_frame() {
