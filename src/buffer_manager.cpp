@@ -194,4 +194,9 @@ void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
             }
         }
     }
+    std::cout << "FINAL EVICTION CANDIDATES: ";
+    for (auto element : eviction_candidates) {
+        std::cout << element->page_id << " ";
+    }
+    std::cout << std::endl;
 }
