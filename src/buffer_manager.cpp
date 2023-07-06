@@ -126,8 +126,8 @@ BufferFrame *BufferManager::_pop_eviction_candidate() {
 }
 
 void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
-    //
     if (!_has_eviction_candidate(frame)) {
+        std::cout << "ADDING EVICTION CANDIDATE: " << frame->page_id << std::endl;
         eviction_candidates.push_back(frame);
         if (_callbacks.get_parent) {
             Swip& swip = _callbacks.get_parent(frame, _managed_data_structure);
