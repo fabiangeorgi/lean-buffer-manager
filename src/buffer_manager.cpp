@@ -56,7 +56,6 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
     }
         // Resolve evicted Swip
     else {
-        auto pageId = swip.page_id();
         if (_volatile_region->free_frame_count() == 0) {
             _evict_page();
         }
@@ -64,6 +63,7 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         auto *bf = _volatile_region->allocate_frame();
         _create_cooling_state_share(bf);
 
+        auto pageId = swip.page_id();
         bf->page_id = pageId;
         _ssd_region->read_page(bf->page.data(), pageId);
         swip.swizzle(bf);
@@ -101,8 +101,7 @@ void BufferManager::_evict_page() {
 }
 
 bool BufferManager::_has_eviction_candidate(const BufferFrame *frame) {
-    // TODO(student) implement
-    std::cout << frame->page_id << std::endl;
+    std::cout << "CHECKING EVICTION CANDIDATE " << frame->page_id << std::endl;
     return std::find(eviction_candidates.begin(), eviction_candidates.end(), frame) != eviction_candidates.end();
 }
 
