@@ -100,7 +100,7 @@ void BufferManager::_evict_page() {
     }
 
     if (_callbacks.get_parent) {
-        auto swip = _callbacks.get_parent(bf, _managed_data_structure);
+        auto& swip = _callbacks.get_parent(bf, _managed_data_structure);
         swip.evict(bf->page_id);
     }
 
