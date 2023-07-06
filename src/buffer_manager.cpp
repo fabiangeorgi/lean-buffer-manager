@@ -173,8 +173,7 @@ void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
 
         // we found a hot one -> check if all its children are not hot -> then we can use it
         // otherwise use the children -> children might need to propagate down again
-        auto swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
-        Swip &iterator = swip;
+        Swip &iterator = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         // when deleting: children could already be not evicted
         auto childrenIsSwizzledIteratorFunction = [&iterator](Swip &swip) {
             if (swip.is_swizzled()) {
@@ -185,7 +184,7 @@ void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
         };
 
         while (true) {
-            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(swip.buffer_frame(),
+            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(iterator.buffer_frame(),
                                                                             childrenIsSwizzledIteratorFunction);
             // check that at least one child is swizzled
             if (!atleastOneChildrenIsSwizzled) {
