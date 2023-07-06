@@ -1,7 +1,7 @@
 #include "buffer_frame.hpp"
 
 std::byte* Page::data() {
-    return this->payload.begin();
+    return this->payload.data();
 }
 
 Page::operator std::byte*() { return reinterpret_cast<std::byte*>(this); }

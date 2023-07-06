@@ -66,11 +66,12 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
         }
 
         auto *bf = _volatile_region->allocate_frame();
+        _create_cooling_state_share(bf);
+
         bf->page_id = pageId;
         _ssd_region->read_page(bf->page.data(), pageId);
         swip.swizzle(bf);
 
-        _create_cooling_state_share(bf);
         return bf;
     }
     // Ensure the number of cooling frames if a frame was allocated in this function since this allocation might have
@@ -192,6 +193,11 @@ void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
             if (!atleastOneChildrenIsSwizzled) {
                 // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
                 _add_eviction_candidate(iterator.buffer_frame());
+                std::cout << "EVICTION CANDIDATES: ";
+                for (auto element : eviction_candidates) {
+                    std::cout << element->page_id << " ";
+                }
+                std::cout << std::endl;
                 break;
             }
         }
