@@ -158,7 +158,7 @@ void BufferManager::_create_cooling_state_share() {
         auto eviction_candidate = _random_frame();
         auto swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         // if swip is not hot -> already evicted, cooling or free -> get new random frame
-        while (!swip.is_swizzled()) {
+        while (!swip.is_swizzled() && !_has_eviction_candidate(swip.buffer_frame())) {
             eviction_candidate = _random_frame();
             swip = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         }
