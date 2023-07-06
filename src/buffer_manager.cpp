@@ -99,19 +99,22 @@ void BufferManager::_evict_page() {
     _volatile_region->free_frame(bf);
 }
 
-bool BufferManager::_has_eviction_candidate(const BufferFrame *frame) {
-    return std::find(eviction_candidates.begin(), eviction_candidates.end(), frame) != eviction_candidates.end();
+bool BufferManager::_has_eviction_candidate(BufferFrame *frame) {
+    return fast_access.contains(frame);
 }
 
 BufferFrame *BufferManager::_pop_eviction_candidate() {
-    auto *evictionCandidate = eviction_candidates.front();
-    eviction_candidates.erase(eviction_candidates.begin());
-    return evictionCandidate;
+    auto begin = eviction_list.begin();
+    fast_access.erase(*begin);
+    eviction_list.erase(begin);
+    return *begin;
 }
 
 void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
     if (!_has_eviction_candidate(frame)) {
-        eviction_candidates.push_back(frame);
+
+        fast_access[frame] = eviction_list.insert(eviction_list.begin(), frame);
+
         if (_callbacks.get_parent) {
             Swip& swip = _callbacks.get_parent(frame, _managed_data_structure);
             swip.unswizzle();
@@ -119,13 +122,15 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
     }
 }
 
-void BufferManager::_remove_eviction_candidate(const BufferFrame *frame) {
-    eviction_candidates.erase(std::remove(eviction_candidates.begin(), eviction_candidates.end(), frame),
-                              eviction_candidates.end());
+void BufferManager::_remove_eviction_candidate(BufferFrame *frame) {
+    if (auto element = fast_access.find(frame); element != fast_access.end()) {
+        eviction_list.erase(element->second);
+        fast_access.erase(element->first);
+    }
 }
 
 uint32_t BufferManager::_eviction_candidate_count() {
-    return eviction_candidates.size();
+    return eviction_list.size();
 }
 
 BufferFrame *BufferManager::_random_frame() {

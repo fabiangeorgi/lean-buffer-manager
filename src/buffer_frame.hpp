@@ -64,6 +64,5 @@ struct BufferFrame {
   // Actual page data.
   Page page{};
 
-  // -- TODO(student) Add further functions and members if required.
   bool dirty = false;
 };

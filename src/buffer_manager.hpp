@@ -83,7 +83,7 @@ class BufferManager {
 
   // Checks if the passed buffer frame is an eviction candidate. In terms of the second chance lean eviction policy
   // described in the paper, this function checks if the frame is in the cooling stage.
-  bool _has_eviction_candidate(const BufferFrame* frame);
+  bool _has_eviction_candidate(BufferFrame* frame);
 
   // Pops and returns the frame that is to be evicted.
   BufferFrame* _pop_eviction_candidate();
@@ -93,7 +93,7 @@ class BufferManager {
   void _add_eviction_candidate(BufferFrame* frame);
 
   // Removes the passed frame from the set of eviction candidates (if it is present).
-  void _remove_eviction_candidate(const BufferFrame* frame);
+  void _remove_eviction_candidate(BufferFrame* frame);
 
   // Returns the number of frames in the set of eviction candidates.
   uint32_t _eviction_candidate_count();
@@ -111,11 +111,9 @@ class BufferManager {
   // Chooses a random frame. Do not modify the code.
   BufferFrame* _random_frame();
 
-  // TODO(student) Feel free to add more private member functions and variables.
-  // ...
-  // needs to be a FIFO datastructure -> queue does not work, because we need to iterate over it to see if it contains
-  std::vector<BufferFrame*> eviction_candidates = {};
-  // TODO might use map as faster lookup in combination with list -> don't have to iterate over the whole evicition candidates
+  // IDEA: https://stackoverflow.com/questions/8619404/hash-list-with-stl-can-i-point-to-an-item-in-an-stl-list-to-another-item/8619656#8619656
+  std::unordered_map<BufferFrame*, std::list<BufferFrame*>::iterator> fast_access = {};
+  std::list<BufferFrame*> eviction_list = {};
 
   void _create_cooling_state_share(BufferFrame* bf);
 };

@@ -107,8 +107,6 @@ public:
 private:
     void _init_free_pages();
 
-    // TODO(student) Feel free to add further variables or functions if needed.
-    // ...
     int32_t _file;
     uint64_t _page_count;
     std::deque<PageID> _free_pages{};
