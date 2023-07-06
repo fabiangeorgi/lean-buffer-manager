@@ -141,16 +141,16 @@ BufferFrame *BufferManager::_random_frame() {
     return _volatile_region->frames() + random_frame_offset;
 }
 
-void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
-    auto const currentlyUsedFrames = FRAME_COUNT_MAX - _volatile_region->free_frame_count();
-    if (currentlyUsedFrames < FIFTY_PERCENT_FRAMES) {
+void BufferManager::_create_cooling_state_share(const BufferFrame* bf) {
+    // check if currently used frames = FRAME_COUNT_MAX - _volatile_region->free_frame_count() smaller than we need
+    if (FRAME_COUNT_MAX - _volatile_region->free_frame_count() < FIFTY_PERCENT_FRAMES) {
         // we don't have the needed amount of frames for things to be cooled
         return;
     }
 
     // if we do -> add as much to cooling state as we need to reach quota
     while (_eviction_candidate_count() < FRAMES_NEEDED_IN_COOLING_STAGE) {
-        auto eviction_candidate = _random_frame();
+        eviction_candidate = _random_frame();
         // if swip is not hot -> already evicted, cooling or free -> get new random frame
 
         if (eviction_candidate == bf || eviction_candidate->page_id == INVALID_PAGE_ID) {
@@ -165,13 +165,6 @@ void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
         // we found a hot one -> check if all its children are not hot -> then we can use it
         // otherwise use the children -> children might need to propagate down again
         // when deleting: children could already be not evicted
-        auto childrenIsSwizzledIteratorFunction = [&eviction_candidate](Swip &swip) {
-            if (swip.is_swizzled()) {
-                eviction_candidate = swip.buffer_frame();
-                return true;
-            }
-            return false;
-        };
 
         while (true) {
             bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(eviction_candidate,

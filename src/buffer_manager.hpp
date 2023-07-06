@@ -115,9 +115,20 @@ class BufferManager {
   std::unordered_map<BufferFrame*, std::list<BufferFrame*>::iterator> fast_access = {};
   std::list<BufferFrame*> eviction_list = {};
 
-  void _create_cooling_state_share(BufferFrame* bf);
+  void _create_cooling_state_share(const BufferFrame* bf);
 
-    uint64_t FRAME_COUNT_MAX;
-    uint64_t FRAMES_NEEDED_IN_COOLING_STAGE;
-    uint64_t FIFTY_PERCENT_FRAMES;
+
+  uint64_t FRAME_COUNT_MAX;
+  uint64_t FRAMES_NEEDED_IN_COOLING_STAGE;
+  uint64_t FIFTY_PERCENT_FRAMES;
+
+  BufferFrame *eviction_candidate;
+  const std::function<bool(Swip &)> childrenIsSwizzledIteratorFunction = [&eviction_candidate = this->eviction_candidate](
+          Swip &swip) {
+      if (swip.is_swizzled()) {
+          eviction_candidate = swip.buffer_frame();
+          return true;
+      }
+      return false;
+  };
 };
