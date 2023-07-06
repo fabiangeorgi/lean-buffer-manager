@@ -25,9 +25,8 @@ BufferFrame *BufferManager::allocate_page() {
         _evict_page();
     }
 
-    auto pageId = _ssd_region->allocate_page_id();
-
     auto *bf = _volatile_region->allocate_frame();
+    auto pageId = _ssd_region->allocate_page_id();
     bf->page_id = pageId;
     _create_cooling_state_share(bf);
     std::cout << "ALLOCATED PAGE: " << bf->page_id << std::endl;
@@ -69,8 +68,8 @@ BufferFrame *BufferManager::get_frame(Swip &swip) {
 
         auto pageId = swip.page_id();
         bf->page_id = pageId;
-        _ssd_region->read_page(bf->page.data(), pageId);
         swip.swizzle(bf);
+        _ssd_region->read_page(bf->page.data(), pageId);
 
         std::cout << "GET FRAME EVICTED: " << swip.buffer_frame()->page_id << std::endl;
         return bf;
@@ -131,8 +130,14 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
 }
 
 void BufferManager::_remove_eviction_candidate(const BufferFrame *frame) {
+    std::cout << "REMOVING EVICTION CANDIDATE " << frame->page_id << std::endl;
     eviction_candidates.erase(std::remove(eviction_candidates.begin(), eviction_candidates.end(), frame),
                               eviction_candidates.end());
+    std::cout << "EVICTION CANDIDATES AFTER DELETE: ";
+    for (auto element : eviction_candidates) {
+        std::cout << element->page_id << " ";
+    }
+    std::cout << std::endl;
 }
 
 uint32_t BufferManager::_eviction_candidate_count() {
