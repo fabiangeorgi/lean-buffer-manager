@@ -16,13 +16,11 @@ BufferManager::BufferManager(std::unique_ptr<VolatileRegion> volatile_region, st
     _random_generator.seed(42);
     _distribution = std::uniform_int_distribution<uint64_t>(0, _volatile_region->frame_count() - 1);
 
-    // -- TODO(student) implement
     // ...
     // for performance -> resize and reserve vector
 }
 
 BufferFrame *BufferManager::allocate_page() {
-    // TODO(student)
     if (_volatile_region->free_frame_count() == 0) {
         _evict_page();
     }
@@ -36,7 +34,6 @@ BufferFrame *BufferManager::allocate_page() {
 }
 
 void BufferManager::free_page(BufferFrame *frame) {
-    // TODO(student) implement
     // use this order because otherwise the page_id is INVALID
     // in the volatile region we directly overwrite at the frame memory addresss
     // thus when reading from it again we get not the correct page id back
@@ -45,7 +42,6 @@ void BufferManager::free_page(BufferFrame *frame) {
 }
 
 BufferFrame *BufferManager::get_frame(Swip &swip) {
-    // -- TODO(student) implement
     // Resolve swizzled Swip
     if (swip.is_swizzled()) {
         return swip.buffer_frame();
@@ -111,16 +107,13 @@ bool BufferManager::_has_eviction_candidate(const BufferFrame *frame) {
 }
 
 BufferFrame *BufferManager::_pop_eviction_candidate() {
-    // TODO(student) implement
     auto *evictionCandidate = eviction_candidates.front();
     eviction_candidates.erase(eviction_candidates.begin());
     return evictionCandidate;
 }
 
 void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
-    // TODO(student) implement
-    // only add if not eviction candidate
-    // TODO: check later: can we remove this here and move this condition somewhere else?
+    //
     if (!_has_eviction_candidate(frame)) {
         eviction_candidates.push_back(frame);
         if (_callbacks.get_parent) {
@@ -131,13 +124,11 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
 }
 
 void BufferManager::_remove_eviction_candidate(const BufferFrame *frame) {
-    // TODO(student) implement
     eviction_candidates.erase(std::remove(eviction_candidates.begin(), eviction_candidates.end(), frame),
                               eviction_candidates.end());
 }
 
 uint32_t BufferManager::_eviction_candidate_count() {
-    // TODO(student) implement
     return eviction_candidates.size();
 }
 
@@ -148,11 +139,9 @@ BufferFrame *BufferManager::_random_frame() {
 }
 
 void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
-    // TODO somewhere here is a endless loop
     auto const frameCount = _volatile_region->frame_count();
     auto const framesNeededInCoolingStage = static_cast<uint64_t>(frameCount * SHARE_COOLING_PAGES);
     auto const fiftyPercentOfFrames =  static_cast<uint64_t>(frameCount * SHARE_USED_PAGES_BEFORE_COOLING);
-    // TODO we can later change this logic to just use free frame count, but for now makes logic easier to implement
     auto const currentlyUsedFrames = frameCount - _volatile_region->free_frame_count();
 
     if (currentlyUsedFrames < fiftyPercentOfFrames) {
@@ -176,23 +165,22 @@ void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
 
         // we found a hot one -> check if all its children are not hot -> then we can use it
         // otherwise use the children -> children might need to propagate down again
-        Swip &iterator = _callbacks.get_parent(eviction_candidate, _managed_data_structure);
         // when deleting: children could already be not evicted
-        auto childrenIsSwizzledIteratorFunction = [&iterator](Swip &swip) {
+        auto childrenIsSwizzledIteratorFunction = [&eviction_candidate](Swip &swip) {
             if (swip.is_swizzled()) {
-                iterator = swip;
+                eviction_candidate = swip.buffer_frame();
                 return true;
             }
             return false;
         };
 
         while (true) {
-            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(iterator.buffer_frame(),
+            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(eviction_candidate,
                                                                             childrenIsSwizzledIteratorFunction);
             // check that at least one child is swizzled
             if (!atleastOneChildrenIsSwizzled) {
                 // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
-                _add_eviction_candidate(iterator.buffer_frame());
+                _add_eviction_candidate(eviction_candidate);
                 std::cout << "EVICTION CANDIDATES: ";
                 for (auto element : eviction_candidates) {
                     std::cout << element->page_id << " ";
