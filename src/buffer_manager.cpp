@@ -108,8 +108,15 @@ void BufferManager::_evict_page() {
 }
 
 bool BufferManager::_has_eviction_candidate(const BufferFrame *frame) {
-    std::cout << "CHECKING EVICTION CANDIDATE " << frame->page_id << std::endl;
-    return std::find(eviction_candidates.begin(), eviction_candidates.end(), frame) != eviction_candidates.end();
+    std::cout << "CHECKING EVICTION CANDIDATE " << frame->page_id;
+    std::cout << " [";
+    for (auto element : eviction_candidates) {
+        std::cout << element->page_id << ", ";
+    }
+    std::cout << "]";
+    bool result = std::find(eviction_candidates.begin(), eviction_candidates.end(), frame) != eviction_candidates.end();
+    std::cout << " | Result: " << result << std::endl;
+    return result;
 }
 
 BufferFrame *BufferManager::_pop_eviction_candidate() {
