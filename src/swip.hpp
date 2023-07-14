@@ -66,13 +66,13 @@ private:
 
     // NOTE: we use this layout because we can easily see by the last bit if (0) hot/cool or (1) evicted
     // x00
-    static const uint64_t hotBits = uint64_t(0);
+    static constexpr uint64_t hotBits = uint64_t(0);
     // x10
-    static const uint64_t coolingBits = uint64_t(2);
+    static constexpr uint64_t coolingBits = uint64_t(2);
     // x01
-    static const uint64_t evictedBits = uint64_t(1);
+    static constexpr uint64_t evictedBits = uint64_t(1);
 
-    static const uint8_t NUMBER_OF_BITS_FOR_TAGGING = 2;
+    static constexpr uint8_t NUMBER_OF_BITS_FOR_TAGGING = 2;
     // x11
-    static const uint64_t comparisonMask = uint64_t(3);
+    static constexpr uint64_t comparisonMask = uint64_t(3);
 };
