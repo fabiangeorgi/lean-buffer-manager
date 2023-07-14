@@ -77,7 +77,11 @@ SSDRegion::SSDRegion(const std::filesystem::path &file_path, uint64_t page_count
     // O_DIRECT -> direct disk access -> kernel does not get involved
     _file = open(file_path.c_str(), O_CREAT | O_RDWR | O_DIRECT | O_TRUNC, 0600);
     // should contain page_count pages
-    ftruncate(_file, page_count * sizeof(Page));
+    auto dummy_data = (uint8_t *) aligned_alloc(sizeof(Page), page_count * sizeof(Page));
+    pwrite(_file, dummy_data, page_count * sizeof(Page), 0);
+
+    free(dummy_data);
+    // ftruncate(_file, page_count * sizeof(Page));
 
     _init_free_pages();
 }
@@ -87,17 +91,17 @@ uint64_t SSDRegion::page_count() const {
 }
 
 uint64_t SSDRegion::free_page_count() const {
-    return _free_pages2.size();
+    return _free_pages.size();
 }
 
 PageID SSDRegion::allocate_page_id() {
-    PageID freePageId = _free_pages2.back();
-    _free_pages2.pop_back();
+    PageID freePageId = _free_pages.back();
+    _free_pages.pop_back();
     return freePageId;
 }
 
 void SSDRegion::free_page_id(PageID page_id) {
-    _free_pages2.push_back(page_id);
+    _free_pages.push_back(page_id);
 }
 
 SSDRegion::~SSDRegion() {
@@ -115,7 +119,7 @@ void SSDRegion::write_page(const std::byte *source, PageID page_id) {
 
 void SSDRegion::_init_free_pages() {
     for (PageID i = _page_count - 1; i > 0; i--) {
-        _free_pages2.push_back(i);
+        _free_pages.push_back(i);
     }
-    _free_pages2.push_back(0);
+    _free_pages.push_back(0);
 }
