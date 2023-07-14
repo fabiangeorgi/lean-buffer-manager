@@ -115,7 +115,7 @@ class BufferManager {
   std::unordered_map<BufferFrame*, std::list<BufferFrame*>::iterator> fast_access = {};
   std::list<BufferFrame*> eviction_list = {};
 
-  void _create_cooling_state_share(BufferFrame* bf);
+  void _create_cooling_state_share(const BufferFrame* bf);
 
 
   const uint64_t FRAME_COUNT_MAX;
