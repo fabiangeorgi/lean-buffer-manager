@@ -153,7 +153,7 @@ void BufferManager::_create_cooling_state_share(const BufferFrame *bf) {
         auto eviction_candidate = _random_frame();
         // if swip is not hot -> already evicted, cooling or free -> get new random frame
 
-        if (eviction_candidate == bf || eviction_candidate->page_id == INVALID_PAGE_ID) {
+        if (eviction_candidate->page_id == INVALID_PAGE_ID || eviction_candidate == bf) {
             continue;
         }
 
