@@ -109,6 +109,5 @@ private:
 
     int32_t _file;
     uint64_t _page_count;
-    std::vector<PageID> _free_pages2{};
-//    std::deque<PageID> _free_pages{};
+    std::vector<PageID> _free_pages{};
 };

@@ -141,7 +141,7 @@ BufferFrame *BufferManager::_random_frame() {
     return _volatile_region->frames() + random_frame_offset;
 }
 
-void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
+void BufferManager::_create_cooling_state_share(const BufferFrame* bf) {
     // check if currently used frames = FRAME_COUNT_MAX - _volatile_region->free_frame_count() smaller than we need
     if (FRAME_COUNT_MAX - _volatile_region->free_frame_count() < FIFTY_PERCENT_FRAMES) {
         // we don't have the needed amount of frames for things to be cooled
