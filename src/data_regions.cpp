@@ -87,17 +87,17 @@ uint64_t SSDRegion::page_count() const {
 }
 
 uint64_t SSDRegion::free_page_count() const {
-    return _free_pages.size();
+    return _free_pages2.size();
 }
 
 PageID SSDRegion::allocate_page_id() {
-    PageID freePageId = _free_pages.back();
-    _free_pages.pop_back();
+    PageID freePageId = _free_pages2.back();
+    _free_pages2.pop_back();
     return freePageId;
 }
 
 void SSDRegion::free_page_id(PageID page_id) {
-    _free_pages.push_back(page_id);
+    _free_pages2.push_back(page_id);
 }
 
 SSDRegion::~SSDRegion() {
@@ -115,7 +115,7 @@ void SSDRegion::write_page(const std::byte *source, PageID page_id) {
 
 void SSDRegion::_init_free_pages() {
     for (PageID i = _page_count - 1; i > 0; i--) {
-        _free_pages.push_back(i);
+        _free_pages2.push_back(i);
     }
-    _free_pages.push_back(0);
+    _free_pages2.push_back(0);
 }

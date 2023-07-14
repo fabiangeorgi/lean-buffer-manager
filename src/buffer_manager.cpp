@@ -1,11 +1,7 @@
 #include "buffer_manager.hpp"
 
-#include <algorithm>
-#include <cassert>
 #include <iterator>
 #include <memory>
-#include <random>
-#include <iostream>
 
 #include "buffer_frame.hpp"
 #include "swip.hpp"
@@ -141,7 +137,7 @@ BufferFrame *BufferManager::_random_frame() {
     return _volatile_region->frames() + random_frame_offset;
 }
 
-void BufferManager::_create_cooling_state_share(const BufferFrame *bf) {
+void BufferManager::_create_cooling_state_share(BufferFrame *bf) {
     // check if currently used frames = FRAME_COUNT_MAX - _volatile_region->free_frame_count() smaller than we need
     if (FRAME_COUNT_MAX - _volatile_region->free_frame_count() < FIFTY_PERCENT_FRAMES) {
         // we don't have the needed amount of frames for things to be cooled
@@ -153,7 +149,7 @@ void BufferManager::_create_cooling_state_share(const BufferFrame *bf) {
         auto eviction_candidate = _random_frame();
         // if swip is not hot -> already evicted, cooling or free -> get new random frame
 
-        if (eviction_candidate->page_id == INVALID_PAGE_ID || eviction_candidate == bf) {
+        if (eviction_candidate == bf || eviction_candidate->page_id == INVALID_PAGE_ID) {
             continue;
         }
 
@@ -173,8 +169,15 @@ void BufferManager::_create_cooling_state_share(const BufferFrame *bf) {
             return false;
         };
 
-        while (_callbacks.iterate_children(eviction_candidate, childrenIsSwizzledIteratorFunction)) {}
-        // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
-        _add_eviction_candidate(eviction_candidate);
+        while (true) {
+            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(eviction_candidate,
+                                                                            childrenIsSwizzledIteratorFunction);
+            // check that at least one child is swizzled
+            if (!atleastOneChildrenIsSwizzled) {
+                // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
+                _add_eviction_candidate(eviction_candidate);
+                break;
+            }
+        }
     }
 }
