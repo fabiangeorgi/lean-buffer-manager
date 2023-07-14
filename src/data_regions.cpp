@@ -80,9 +80,6 @@ SSDRegion::SSDRegion(const std::filesystem::path &file_path, uint64_t page_count
     auto dummy_data = (uint8_t *) aligned_alloc(sizeof(Page), page_count * sizeof(Page));
     pwrite(_file, dummy_data, page_count * sizeof(Page), 0);
 
-    free(dummy_data);
-    // ftruncate(_file, page_count * sizeof(Page));
-
     _init_free_pages();
 }
 
