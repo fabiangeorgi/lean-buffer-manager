@@ -90,8 +90,7 @@ void BufferManager::_evict_page() {
     }
 
     if (_callbacks.get_parent) {
-        auto &swip = _callbacks.get_parent(bf, _managed_data_structure);
-        swip.evict(bf->page_id);
+        _callbacks.get_parent(bf, _managed_data_structure).evict(bf->page_id);
     }
 
     _volatile_region->free_frame(bf);
@@ -114,8 +113,7 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
         fast_access[frame] = eviction_list.insert(eviction_list.end(), frame);
 
         if (_callbacks.get_parent) {
-            Swip &swip = _callbacks.get_parent(frame, _managed_data_structure);
-            swip.unswizzle();
+            _callbacks.get_parent(frame, _managed_data_structure).unswizzle();
         }
     }
 }
