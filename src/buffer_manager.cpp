@@ -12,9 +12,9 @@
 
 BufferManager::BufferManager(std::unique_ptr<VolatileRegion> volatile_region, std::unique_ptr<SSDRegion> ssd_region)
         : _volatile_region(std::move(volatile_region)), _ssd_region(std::move(ssd_region)),
-        FRAME_COUNT_MAX( _volatile_region->frame_count()),
-        FRAMES_NEEDED_IN_COOLING_STAGE(static_cast<uint64_t>(FRAME_COUNT_MAX * SHARE_COOLING_PAGES)),
-        FIFTY_PERCENT_FRAMES(static_cast<uint64_t>(FRAME_COUNT_MAX * SHARE_USED_PAGES_BEFORE_COOLING)) {
+          FRAME_COUNT_MAX(_volatile_region->frame_count()),
+          FRAMES_NEEDED_IN_COOLING_STAGE(static_cast<uint64_t>(FRAME_COUNT_MAX * SHARE_COOLING_PAGES)),
+          FIFTY_PERCENT_FRAMES(static_cast<uint64_t>(FRAME_COUNT_MAX * SHARE_USED_PAGES_BEFORE_COOLING)) {
     // Do not modify the lines below.
     _random_generator.seed(42);
     _distribution = std::uniform_int_distribution<uint64_t>(0, _volatile_region->frame_count() - 1);
@@ -94,7 +94,7 @@ void BufferManager::_evict_page() {
     }
 
     if (_callbacks.get_parent) {
-        auto& swip = _callbacks.get_parent(bf, _managed_data_structure);
+        auto &swip = _callbacks.get_parent(bf, _managed_data_structure);
         swip.evict(bf->page_id);
     }
 
@@ -118,7 +118,7 @@ void BufferManager::_add_eviction_candidate(BufferFrame *frame) {
         fast_access[frame] = eviction_list.insert(eviction_list.end(), frame);
 
         if (_callbacks.get_parent) {
-            Swip& swip = _callbacks.get_parent(frame, _managed_data_structure);
+            Swip &swip = _callbacks.get_parent(frame, _managed_data_structure);
             swip.unswizzle();
         }
     }
@@ -141,7 +141,7 @@ BufferFrame *BufferManager::_random_frame() {
     return _volatile_region->frames() + random_frame_offset;
 }
 
-void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
+void BufferManager::_create_cooling_state_share(const BufferFrame *bf) {
     // check if currently used frames = FRAME_COUNT_MAX - _volatile_region->free_frame_count() smaller than we need
     if (FRAME_COUNT_MAX - _volatile_region->free_frame_count() < FIFTY_PERCENT_FRAMES) {
         // we don't have the needed amount of frames for things to be cooled
@@ -173,15 +173,8 @@ void BufferManager::_create_cooling_state_share(BufferFrame* bf) {
             return false;
         };
 
-        while (true) {
-            bool atleastOneChildrenIsSwizzled = _callbacks.iterate_children(eviction_candidate,
-                                                                            childrenIsSwizzledIteratorFunction);
-            // check that at least one child is swizzled
-            if (!atleastOneChildrenIsSwizzled) {
-                // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
-                _add_eviction_candidate(eviction_candidate);
-                break;
-            }
-        }
+        while (_callbacks.iterate_children(eviction_candidate, childrenIsSwizzledIteratorFunction)) {}
+        // we found one candidate -> thus we can add it to the eviction candidates and unswizzle its pointer
+        _add_eviction_candidate(eviction_candidate);
     }
 }
