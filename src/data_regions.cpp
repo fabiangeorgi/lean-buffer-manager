@@ -33,7 +33,7 @@ BufferFrame *VolatileRegion::allocate_frame() {
 }
 
 void VolatileRegion::free_frame(BufferFrame *frame) {
-    _free_frames.push_back(new (frame) BufferFrame());
+    _free_frames.push_back(new(frame) BufferFrame());
 }
 
 BufferFrame *VolatileRegion::frames() {
@@ -67,7 +67,9 @@ void VolatileRegion::_init_free_frames() {
 //// SSD Region
 ///////////////////////////////////////////////////////////
 
-SSDRegion::SSDRegion(const std::filesystem::path &file_path, uint64_t page_count) : _page_count(page_count) {
+SSDRegion::SSDRegion(const std::filesystem::path &file_path, uint64_t page_count) :
+        _file(open(file_path.c_str(), O_CREAT | O_RDWR | O_DIRECT | O_TRUNC, 0600)),
+        _page_count(page_count) {
     // open the file at `file_path`. Note, we want to read and write data. If the file already exists, overwrite it. Note,
     // that O_DIRECT is required.
     // open file
@@ -75,7 +77,6 @@ SSDRegion::SSDRegion(const std::filesystem::path &file_path, uint64_t page_count
     // O_TRUNC -> TRUNCATE to 0 if exists
     // O_RDWR -> READ and WRITE
     // O_DIRECT -> direct disk access -> kernel does not get involved
-    _file = open(file_path.c_str(), O_CREAT | O_RDWR | O_DIRECT | O_TRUNC, 0600);
     // should contain page_count pages
     auto dummy_data = (uint8_t *) aligned_alloc(sizeof(Page), page_count * sizeof(Page));
     pwrite(_file, dummy_data, page_count * sizeof(Page), 0);
